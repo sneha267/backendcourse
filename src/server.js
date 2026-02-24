@@ -1,12 +1,39 @@
-const express = require("express")
-const app = express();
+import express from "express"
+import {config} from 'dotenv';
+import { connectDB, disconnectDB } from "./config/db.js";
 const PORT = 3000;
+import movieRoute from "./routes/movieRoute.js"
 
-app.get('/hello',(req,res)=>{
-    res.json({message:"hello world"});
-})
+config();
+connectDB();
 
-const server = app.listen(PORT, ()=>{
+const app = express();
+app.use("/movies",movieRoute)
+
+app.listen(PORT, ()=>{
     console.log(`server running on port ${PORT}`)
 })
+
+process.on("unhandledRejection",(err)=>{
+    console.error("Unhandled Rejection:", err);
+    server.close(async ()=>{
+        await disconnectDB();
+        process.exit(1)
+    })
+})
+
+process.on("uncaughtException",async (err)=>{
+    console.error("uncaught exception:", err);
+        await disconnectDB();
+        process.exit(1)
+})
+
+process.on("SIGTERM", async ()=>{
+    console.error("SIGTERM received, shutting down gracefully:");
+    server.close(async ()=>{
+        await disconnectDB();
+        process.exit(0)
+    })
+})
+
 
